@@ -1,24 +1,26 @@
 package com.backend.librarycrm.security;
 
-import com.backend.librarycrm.service.LogoutService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
-    private final LogoutService logoutService;
 
-    public SecurityConfig(LogoutService logoutService) {
-        this.logoutService = logoutService;
-    }
+    private final JwtAuthenticationFilter jwtAuthFilter; // Tiêm lính gác vào
+
+
+
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -29,22 +31,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated() // Các API khác bắt buộc phải có token
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng Session của server
-                .logout(logout -> logout
-                .logoutUrl("/api/v1/auth/logout") // Endpoint đăng xuất
-                .addLogoutHandler(logoutService) // Gọi hàm mình vừa viết
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    // Trả về JSON thành công khi đăng xuất xong thay vì chuyển trang HTML
-                    response.setContentType("application/json");
-                    response.setCharacterEncoding("UTF-8");
-                    response.getWriter().write("{\"status\": 200, \"message\": \"Đăng xuất thành công!\"}");
-                })
-        );
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        // Mã hóa mật khẩu 1 chiều chuẩn công nghiệp
-        return new BCryptPasswordEncoder();
-    }
+
 }

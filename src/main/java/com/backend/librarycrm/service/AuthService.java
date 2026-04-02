@@ -8,18 +8,21 @@ import com.backend.librarycrm.model.User;
 import com.backend.librarycrm.repository.TokenRepository;
 import com.backend.librarycrm.repository.UserRepository;
 import com.backend.librarycrm.security.JwtService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final TokenRepository tokenRepository; // Nhớ tiêm thằng này vào nhé
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final TokenRepository tokenRepository;
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -28,24 +31,26 @@ public class AuthService {
 
         User user = User.builder()
                 .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword())) // Mã hóa mật khẩu trước khi lưu
+                .password(passwordEncoder.encode(request.getPassword()))
                 .fullName(request.getFullName())
                 .email(request.getEmail())
                 .phone(request.getPhone())
-                .role("READER") // Mặc định là Độc giả
+                .role("READER")
                 .isActive(true)
                 .fineBalance(0.0)
                 .build();
 
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        String jwtToken = jwtService.generateToken(savedUser);
 
-        // Trả về token luôn để người dùng đăng nhập ngay sau khi đăng ký
-        String jwtToken = jwtService.generateToken(user);
+        // LƯU TOKEN VÀO DB SAU KHI ĐĂNG KÝ
+        saveUserToken(savedUser, jwtToken);
+
         return AuthResponse.builder()
                 .token(jwtToken)
-                .userId(user.getId())
-                .username(user.getUsername())
-                .role(user.getRole())
+                .userId(savedUser.getId())
+                .username(savedUser.getUsername())
+                .role(savedUser.getRole())
                 .build();
     }
 
@@ -62,14 +67,35 @@ public class AuthService {
         }
 
         String jwtToken = jwtService.generateToken(user);
+
+        // THU HỒI CÁC TOKEN CŨ VÀ LƯU TOKEN MỚI
+        revokeAllUserTokens(user);
+        saveUserToken(user, jwtToken);
+
         return AuthResponse.builder()
                 .token(jwtToken)
-                .type("Bearer")
                 .userId(user.getId())
                 .username(user.getUsername())
                 .role(user.getRole())
+                .type("Bearer")
                 .build();
     }
+
+    public void logout(HttpServletRequest request) {
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return;
+        }
+        final String jwt = authHeader.substring(7);
+        var storedToken = tokenRepository.findByToken(jwt).orElse(null);
+        if (storedToken != null) {
+            storedToken.setExpired(true);
+            storedToken.setRevoked(true);
+            tokenRepository.save(storedToken);
+        }
+    }
+
+    // --- CÁC HÀM HELPER NỘI BỘ ---
     private void saveUserToken(User user, String jwtToken) {
         var token = Token.builder()
                 .user(user)
@@ -85,7 +111,6 @@ public class AuthService {
         var validUserTokens = tokenRepository.findAllValidTokenByUser(user.getId());
         if (validUserTokens.isEmpty()) return;
 
-        // Đánh dấu tất cả token cũ là đã bị hủy
         validUserTokens.forEach(token -> {
             token.setExpired(true);
             token.setRevoked(true);
