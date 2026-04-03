@@ -28,6 +28,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF vì chúng ta dùng JWT
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll() // Cho phép tất cả truy cập đường dẫn này
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/books/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/books").hasRole("ADMIN")
                         .anyRequest().authenticated() // Các API khác bắt buộc phải có token
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng Session của server
