@@ -25,7 +25,7 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Override
     @Transactional
-    public BorrowRecord borrowBooks(Integer readerId, Integer librarianId, List<String> barcodes) {
+    public BorrowRecord borrowBooks(Integer readerId, Integer librarianId,List<String> barcodes) {
 
 
         User reader = userRepository.findById(readerId)
@@ -145,5 +145,16 @@ public class BorrowServiceImpl implements BorrowService {
         }
 
         return borrowRecordRepository.save(record);
+    }
+
+    @Override
+    public List<BorrowRecord> getBorrowHistoryByUser(Integer userId) {
+        return borrowRecordRepository.findByUserIdOrderByBorrowDateDesc(userId);
+    }
+
+    @Override
+    public BorrowRecord getBorrowRecordById(Integer recordId) {
+        return borrowRecordRepository.findById(recordId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Phiếu mượn với ID: " + recordId));
     }
 }

@@ -30,6 +30,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/login", "/api/v1/auth/register").permitAll() // Cho phép tất cả truy cập đường dẫn này
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/books/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/books").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/procurement/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/borrows/**").hasRole("READER")
                         .anyRequest().authenticated() // Các API khác bắt buộc phải có token
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng Session của server
