@@ -1,8 +1,10 @@
 package com.backend.librarycrm.service.impl;
 
+import com.backend.librarycrm.dto.request.UpdateProfileRequest;
 import com.backend.librarycrm.model.User;
 import com.backend.librarycrm.repository.UserRepository;
 import com.backend.librarycrm.service.UserService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -35,5 +37,45 @@ public class UserServiceImpl implements UserService {
     public User getUserProfile(Integer userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+    }
+
+    @Override
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng!"));
+    }
+
+    @Override
+    @Transactional
+    public User updateProfile(String username, UpdateProfileRequest request) {
+        User user = getUserByUsername(username);
+
+        if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+            user.setFullName(request.getFullName());
+        }
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            user.setPhone(request.getPhone());
+        }
+
+        return userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public User payFine(String username, Double amount) {
+        User user = getUserByUsername(username);
+
+        if (amount <= 0) {
+            throw new RuntimeException("Số tiền đóng phạt phải lớn hơn 0");
+        }
+        if (user.getFineBalance() == 0) {
+            throw new RuntimeException("Bạn không có khoản nợ phạt nào!");
+        }
+
+        // Trừ tiền phạt (nếu nộp dư thì trả về 0, không lưu số âm)
+        double newBalance = user.getFineBalance() - amount;
+        user.setFineBalance(Math.max(newBalance, 0.0));
+
+        return userRepository.save(user);
     }
 }

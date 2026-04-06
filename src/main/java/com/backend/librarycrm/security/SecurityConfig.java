@@ -32,6 +32,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/books").hasRole("ADMIN")
                         .requestMatchers("/api/v1/procurement/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/borrows/**").hasRole("READER")
+                        .requestMatchers("/api/v1/users/**").hasRole("READER")
                         .anyRequest().authenticated() // Các API khác bắt buộc phải có token
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Không dùng Session của server
