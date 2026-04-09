@@ -1,0 +1,6 @@
+package com.backend.librarycrm.service;
+import java.util.Map;
+
+public interface DashboardService {
+    Map<String, Object> getSummaryStats();
+}

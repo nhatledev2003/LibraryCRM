@@ -19,4 +19,7 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Inte
     // Custom Query: Tìm tất cả các phiếu mượn ĐÃ QUÁ HẠN (Hạn trả < Thời gian hiện tại VÀ trạng thái đang mượn)
     @Query("SELECT b FROM BorrowRecord b WHERE b.dueDate < CURRENT_TIMESTAMP AND b.status = 'BORROWING'")
     List<BorrowRecord> findOverdueRecords();
+
+
+    long countByStatus(String status);
 }
