@@ -28,7 +28,7 @@ Cấu hình các Endpoint API chuyên biệt cho 3 nhóm đối tượng:
 * **Nhập hàng (Procurement):** Quản lý quy trình nhập sách mới từ các nguồn cung cấp.
 
 ## 🚀 Hướng dẫn chạy dự án (Local Setup)
-1. **Yêu cầu:** Java SDK 17+, Maven.
+1. **Yêu cầu:** Java SDK 21+, Maven.
 2. **Cài đặt:**
    ```bash
    mvn clean install
